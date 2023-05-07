@@ -1,3 +1,7 @@
+# Teemu's layout for the BT60 v2 keyboard
+
+![alt text](teemulayout.png)
+
 # zmk-config
 This is the ZMK-Config repo for the Polarity works CKP series of keyboards, with this you can customise your layout and keymap to suit your exact needs.
 We have provided base keymaps for the following layouts on the soldered version: ANSI, ISO, Tsangan and all 1u keys. These can be accessed by choosing the appropriate branch. The hotswap versions now use the exact same firmware as the soldered ones making it harder to end up with an unusable board.
