@@ -1,23 +1,100 @@
-# Teemu's layout for the BT60 v2 keyboard
+# Teemu's BT60 layout (ZMK)
 
-![alt text](teemulayout.png)
+My personal [ZMK](https://zmk.dev) firmware config for the **Polarity Works BT60 v2**
+(nRF52840, Bluetooth + USB) with an ISO layout, a rotary encoder in the bottom-right
+cluster and arrow keys. The keymap is written for a **Finnish/Nordic ISO** OS layout
+(e.g. `SEMI` gives Ö, `SQT` gives Ä).
 
-# zmk-config
-This is the ZMK-Config repo for the Polarity works BT60 keyboard, with this you can customise your layout and keymap to suit your exact needs.
-We have provided base keymaps for the following layouts on the soldered version: ANSI, ISO, Split backspace and right shift, Tsangan and all 1u bottom rows. These can be accessed by choosing the appropriate branch. The hotswap version has one fork which already includes support for split backspace however it is not bound to anything useful thus you will need to fork and customise to your taste
+![Base layer](teemulayout.png)
 
-# Customisation
-In order to change the keymap to meet your needs, you will need a GitHub account. Click the "fork" button in the top right to create your own version of the repo, then use the drop down menu to select the branch with your layout.
-The keymap information is contained entirely within the file bt60.keymap. Download this file to your computer and open it in a text editor such as Atom or notepad++ then you can open and edit it. The full list of ZMK keycodes can be found [here](https://zmkfirmware.dev/docs/codes/keyboard-keypad/).
-After editing the keymap file upload it to the original folder using the "Add file" dialog in GitHub, then click on "Actions" and wait for the build process to complete (The orange dot will go to either a red X or green tick). If your firmware doesn't compile you most likely made a mistake with the keys, double check the .keymap file and try again.
+*Base layer. The image dates from 2022, but the key positions still match the current
+base layer.*
 
-# Compilation and downloading
- If you have made any errors in the keymap the compilation will fail and there will be a red X in the actions dialog. Click on it and it will tell you where the problem is.
- If the build completes with no errors you will be able to find the firmware in the "Artifacts" section of the last action.
- Put the keyboard into bootloader (Either double tap the hardware reset button or use the behaviour, typically fn + enter) and drag and drop the .uf2 file onto the usb drive that shows up
+## Files
 
- # More advanced
- If you want to exercise greater control over your BT60 and have a unique layout implemented you will need to change the matrix transform. The following diagram displays which keys connect to which row and column pins. Note that everything is zero indexed in the matrix transform
- 	![alt text](rowcolmap.png)
-  The matrix transform can be found in bt60.dts, more information on how to do the matrix transforms can be found in the official ZMK documentation [here](https://zmkfirmware.dev/docs/development/new-shield#optional-matrix-transform)
-  We're always willing to accept pull requests if you've developed your own layouts :)
+| File | What it is |
+|------|------------|
+| `config/bt60.keymap` | The keymap (two layers + encoder bindings) |
+| `config/boards/arm/bt60/` | Board definition (matrix transform, encoders, backlight, RGB) |
+| `config/west.yml` | Pins the ZMK version the build uses |
+| `.github/workflows/build.yml` | GitHub Actions build that produces `bt60.uf2` |
+| `rowcolmap.png` | Row/column wiring diagram from the upstream repo |
+
+## Layers
+
+### 0: Base
+
+```
+| Esc | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | + | - | Bksp |
+| Tab  | Q | W | E | R | T | Y | U | I | O | P | Å | ¨ |  Enter
+| Caps  | A | S | D | F | G | H | J | K | L | Ö | Ä | ' |  (ISO)
+| Shift | < | Z | X | C | V | B | N | M | , | . | Shift | Up | Knob |
+| Ctrl | Win | Alt |          Space          | AltGr | Fn | Left | Down | Right |
+```
+
+- The key right of `0` sends `MINUS` (`+` on a Finnish layout) and the next one sends
+  `FSLH` (`-` on a Finnish layout).
+- `<` left of Z is `NON_US_BSLH`; the key left of Enter is `NON_US_HASH` (`'` / `*`).
+- **Fn** is momentary layer 1 (`&mo 1`).
+
+### 1: Fn (hold Fn)
+
+| Key | Fn + key |
+|-----|----------|
+| 1 … 0, +, - | F1 … F12 |
+| Backspace | Delete |
+| Tab | Clear current Bluetooth profile |
+| Q, E, R, T, Y | Bluetooth profile 1, 2, 3, 4, 5 |
+| W / A S D | Arrow keys (Up / Left Down Right) |
+| I | Insert |
+| P, Å, ¨ | Print Screen, Scroll Lock, Pause |
+| Ö / Ä | Home / Page Up |
+| Enter | **Bootloader** (for flashing) |
+| < | Previous track |
+| Z / X / C | Volume down / up / mute |
+| V / B | Backlight brighter / dimmer |
+| N / M | RGB saturation down / up |
+| , / . | RGB effect / RGB on-off |
+| Right Shift | End |
+| Up / Down | Page Up / Page Down |
+| Knob press | Backlight on-off |
+| Win | Next Bluetooth profile |
+| Space | **Reset** the keyboard (`&sys_reset`) |
+| AltGr | Toggle output USB / Bluetooth |
+| Right arrow | Clear current Bluetooth profile |
+
+## Encoder
+
+- **Turn:** volume up / down (on both layers).
+- **Press:** Play/Pause; Fn + press toggles the backlight.
+- Two encoder positions are enabled in the board file (`encoder_1` on P0.21/P0.19 and
+  `encoder_2` on P0.26/P0.06), and both get the same volume bindings, so the knob works
+  whichever encoder footprint it is soldered to.
+
+## Build
+
+The firmware builds on GitHub Actions on every push (or run it by hand from
+**Actions → Build → Run workflow**):
+
+1. Edit `config/bt60.keymap` and commit/push.
+2. Open the **Actions** tab and wait for the run to finish (green tick).
+3. Download the **firmware** artifact from the run's summary page. It contains `bt60.uf2`.
+
+The build is pinned to ZMK commit `94789a0` (May 2023, Zephyr 3.2) in `config/west.yml`
+and the `zmkfirmware/zmk-build-arm:3.2` container. Newer ZMK (newer Zephyr and the
+hardware model v2 board layout) does not build this board definition without porting
+it, so don't move `revision:` back to `main` unless you port the board files as well.
+
+## Flash
+
+1. Connect the keyboard over USB.
+2. Enter the bootloader with **Fn + Enter** (or double-tap the reset button on the PCB).
+   A USB drive appears.
+3. Copy `bt60.uf2` onto that drive. The keyboard reboots by itself once it has the file.
+
+## Credits
+
+Based on [PolarityWorks/zmk-config-ckp](https://github.com/PolarityWorks/zmk-config-ckp),
+the official Polarity Works ZMK config for the BT60/CKP boards (board definition,
+wiring diagram and build workflow come from there). The stock upstream version of this
+repo is kept on the `upstream-main` branch.
