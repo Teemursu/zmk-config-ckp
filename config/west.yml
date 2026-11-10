@@ -5,7 +5,7 @@ manifest:
   projects:
     - name: zmk
       remote: zmkfirmware
-      revision: main
+      revision: 94789a092c6d8ddf5ab5ad88eb011a4ece6b5cee  # ZMK main, 2023-05-05 (Zephyr 3.2); newer ZMK breaks this board definition
       import: app/west.yml
   self:
     path: config
